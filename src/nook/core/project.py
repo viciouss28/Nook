@@ -1,8 +1,10 @@
 from pathlib import Path
 
+class ProjectNotFoundError(Exception):
+    """Raised when no nook project is found."""
+    pass
 
-
-def find_project_root(start : Path | None = None) -> Path | None:
+def find_project_root(start : Path | None = None) -> Path :
     """ Find the nearest directory containing .nook."""
 
     current = (start or Path.cwd()).resolve()
@@ -14,7 +16,9 @@ def find_project_root(start : Path | None = None) -> Path | None:
             return current
 
         if current == current.parent:
-            return None
+                    raise ProjectNotFoundError(
+                        "No Nook project found. Run 'nook init' first."
+                    )
 
         current = current.parent
 
@@ -24,6 +28,9 @@ def get_current_scope(project_root : Path, current_dir: Path | None = None) -> P
     current = (current_dir or Path.cwd()).resolve()
     root = project_root.resolve()
 
-    return current.relative_to(root)
+    try:
+        return current.relative_to(root)
+    except ValueError:
+        raise ProjectNotFoundError("Current working directory is outside the Nook Project.")
 
     
