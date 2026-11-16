@@ -1,13 +1,14 @@
-from sqlalchemy.orm import sessionmaker
+
+from sqlalchemy.orm import sessionmaker, Session
+
 from nook.db.engine import get_engine
 
-def get_session_factory():
-    engine = get_engine()
 
-    sessionLocal = sessionmaker(
-        bind=engine,
+def get_session_factory() -> sessionmaker[Session]:
+    """Return a session factory for the active Nook project."""
+
+    return sessionmaker(
+        bind=get_engine(),
         autoflush=False,
-        autocommit=False,
+        expire_on_commit=True,
     )
-
-    return sessionLocal
