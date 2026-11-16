@@ -304,6 +304,109 @@ def get(
     console.print(table)
 
 
+@app.command()
+def status(
+    recursive: bool = typer.Option(
+        False,
+        "--recursive",
+        "-r",
+        help="Show statistics for the entire project."
+    )
+):
+    """Display task statistics."""
+
+    try:
+        project_root = find_project_root()
+        scope_path = get_current_scope(project_root).as_posix()
+
+    except ProjectNotFoundError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+    SessionLocal = get_session_factory()
+
+    with SessionLocal() as db:
+        repository = TaskRepository(db)
+
+        stats = repository.get_task_stats(
+            scope_path=scope_path,
+            recursive=recursive
+        )
+
+    table = Table(title="Nook Status")
+
+    table.add_column("Metric", style="cyan")
+    table.add_column("Count", justify="right", style="bold")
+
+    table.add_row("Total Tasks", str(stats["total"]))
+    table.add_row("Pending", f"[yellow]{stats['pending']}[/yellow]")
+    table.add_row("Completed", f"[green]{stats['completed']}[/green]")
+
+    console.print(table)
+
+    if stats["total"] > 0:
+        progress = (stats["completed"] / stats["total"]) * 100
+        console.print(f"\nCompletion Progress: [bold green]{progress:.1f}%[/bold green]")
+    
+    
+    
+@app.command()
+def update(
+    task_id: int = typer.Argument(..., help="ID of the task to update."),
+    title: str | None = typer.Option(
+        None,
+        "--title",
+        "-t",
+        help="New task title."
+    ),
+    description: str | None = typer.Option(
+        None,
+        "--description",
+        "-d",
+        help="New task description."
+    ),
+):
+    """Update an existing task."""
+
+    if title is None and description is None:
+        typer.echo(
+            "Error: Provide at least --title or --description.",
+            err=True
+        )
+        raise typer.Exit(code=1)
+
+    SessionLocal = get_session_factory()
+
+    with SessionLocal() as db:
+        repository = TaskRepository(db)
+
+        task = repository.update_task(
+            task_id=task_id,
+            title=title,
+            description=description
+        )
+
+    if task is None:
+        console.print(f"[red]Task with ID {task_id} not found.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print("[green]Task updated successfully![/green]")
+
+    table = Table(title="Updated Task")
+    table.add_column("ID")
+    table.add_column("Title")
+    table.add_column("Description")
+    table.add_column("Status")
+
+    table.add_row(
+        str(task.id),
+        task.title,
+        task.description or "-",
+        task.status.title()
+    )
+
+    console.print(table)
+
     
 if __name__ == "__main__":
     app()

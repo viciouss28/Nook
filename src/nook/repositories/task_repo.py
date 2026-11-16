@@ -1,4 +1,4 @@
-
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -188,3 +188,31 @@ class TaskRepository:
         except Exception:
             self.db.rollback()
             raise
+
+    def get_task_stats(
+        self,
+        scope_path: str,
+        recursive: bool = False
+    ) -> dict[str, int]:
+        """Get task statistics for the current scope or entire project."""
+    
+        statement = select(
+            func.count(Task.id).label("total"),
+            func.count(Task.id).filter(
+                Task.status == "pending"
+            ).label("pending"),
+            func.count(Task.id).filter(
+                Task.status == "completed"
+            ).label("completed"),
+        )
+    
+        if not recursive:
+            statement = statement.where(Task.scope_path == scope_path)
+    
+        result = self.db.execute(statement).one()
+    
+        return {
+            "total": result.total,
+            "pending": result.pending,
+            "completed": result.completed,
+        }
