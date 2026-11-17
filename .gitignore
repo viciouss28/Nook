@@ -1,15 +1,26 @@
-.venv/
+
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Nook local project configuration
+.nook/
+
+# Testing and coverage
 .pytest_cache/
 .ruff_cache/
 .coverage
 htmlcov/
-.env
-.env.*
-!.env.example
+
+# Build artifacts
 dist/
 build/
-*.egg-info/
-tests/
-.env
